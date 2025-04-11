@@ -42,7 +42,7 @@ func (s *TableDrivenTestUserControllerSuite) SetupTest() {
 func (s *TableDrivenTestUserControllerSuite) TestRegisterUser() {
 	testcases := []UserControllerTestcase{
 		{
-			name:             "UsernameRequired",
+			name:             "Failed to register user because username is required",
 			body:             types.RegisterUserBody{Username: ""},
 			mockFunc:         func() {},
 			expectedUser:     nil,
@@ -50,7 +50,7 @@ func (s *TableDrivenTestUserControllerSuite) TestRegisterUser() {
 			expectedMockFunc: func() {},
 		},
 		{
-			name:             "UsernameContainsSpaces",
+			name:             "Failed to register user because username contains spaces",
 			body:             types.RegisterUserBody{Username: " user "},
 			mockFunc:         func() {},
 			expectedUser:     nil,
@@ -58,7 +58,7 @@ func (s *TableDrivenTestUserControllerSuite) TestRegisterUser() {
 			expectedMockFunc: func() {},
 		},
 		{
-			name: "UsernameNotAllowed",
+			name: "Failed to register user because username is not allowed",
 			body: types.RegisterUserBody{Username: "admin"},
 			mockFunc: func() {
 				s.mockBadUsernameModel.On("GetBadUsernameByUsername", "admin").Return(&models.BadUsername{Username: "admin"}, true)
@@ -70,7 +70,7 @@ func (s *TableDrivenTestUserControllerSuite) TestRegisterUser() {
 			},
 		},
 		{
-			name: "UsernameAlreadyExists",
+			name: "Failed to register user because username already exists",
 			body: types.RegisterUserBody{Username: "existinguser"},
 			mockFunc: func() {
 				s.mockBadUsernameModel.On("GetBadUsernameByUsername", "existinguser").Return(nil, false)
@@ -84,7 +84,7 @@ func (s *TableDrivenTestUserControllerSuite) TestRegisterUser() {
 			},
 		},
 		{
-			name: "FailedToCreateUser",
+			name: "Failed to register user because failed to create user",
 			body: types.RegisterUserBody{Username: "newuser"},
 			mockFunc: func() {
 				s.mockBadUsernameModel.On("GetBadUsernameByUsername", "newuser").Return(nil, false)
@@ -99,7 +99,7 @@ func (s *TableDrivenTestUserControllerSuite) TestRegisterUser() {
 			},
 		},
 		{
-			name: "UsernameSuccess",
+			name: "Success",
 			body: types.RegisterUserBody{Username: "newuser"},
 			mockFunc: func() {
 				s.mockBadUsernameModel.On("GetBadUsernameByUsername", "newuser").Return(nil, false)
@@ -115,15 +115,17 @@ func (s *TableDrivenTestUserControllerSuite) TestRegisterUser() {
 		},
 	}
 
-	for _, testcase := range testcases {
-		s.Run(testcase.name, func() {
+	for _, test := range testcases {
+		s.Run(test.name, func() {
 			s.SetupTest()
-			testcase.mockFunc()
+			test.mockFunc()
 
-			user, err := s.userController.RegisterUser(testcase.body)
+			user, err := s.userController.RegisterUser(test.body)
 
-			assert.Equal(s.T(), user, testcase.expectedUser)
-			assert.Equal(s.T(), err, testcase.expectedError)
+			assert.Equal(s.T(), user, test.expectedUser)
+			assert.Equal(s.T(), err, test.expectedError)
+
+			test.expectedMockFunc()
 		})
 	}
 }
